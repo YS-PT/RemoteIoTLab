@@ -1,30 +1,30 @@
 import streamlit as st
 import pandas as pd
-from flask import Flask, request
-from threading import Thread
-import datetime
+import requests
+from datetime import datetime
 
-# Initialize a Flask app
-app = Flask(__name__)
+# Initialize data storage
 data = []
 
 
-@app.route('/temperature', methods=['POST'])
-def temperature():
+# Function to receive data
+def receive_data():
     global data
-    temp = request.json['temperature']
-    timestamp = datetime.datetime.now()
-    data.append({'timestamp': timestamp, 'temperature': temp})
-    return 'OK', 200
+    url = 'http://localhost:8501/temperature'  # This should be the public URL when deployed
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Check if the request was successful
+        received_data = response.json()
+        temp = received_data.get('temperature')
+        timestamp = datetime.now()
+        data.append({'timestamp': timestamp, 'temperature': temp})
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error fetching data: {e}")
+    except ValueError as e:
+        st.error(f"JSON decode error: {e}")
 
 
-def run_flask():
-    app.run(host='0.0.0.0', port=8501)
-
-
-# Start the Flask app in a separate thread
-Thread(target=run_flask).start()
-
+# Streamlit dashboard
 st.title('IoT Data Dashboard')
 
 # Sidebar for time of day filtering
@@ -45,6 +45,10 @@ def filter_data(df, time_of_day):
     return df
 
 
+# Receive data
+receive_data()
+
+# Display data
 if data:
     df = pd.DataFrame(data)
     df['timestamp'] = pd.to_datetime(df['timestamp'])
@@ -55,3 +59,8 @@ if data:
 
     # Plotting temperature values
     st.line_chart(df.set_index('timestamp')['temperature'])
+
+# Add a button to manually refresh data
+if st.button('Refresh Data'):
+    # Use query params to trigger a re-run
+    st.query_params(refresh_data=datetime.now().isoformat())
