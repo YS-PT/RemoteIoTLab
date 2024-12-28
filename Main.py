@@ -10,7 +10,7 @@ data = []
 # Function to receive data
 def receive_data():
     global data
-    url = 'http://localhost:8501/temperature'  # This should be the public URL when deployed
+    url = 'https://remoteiotlab-udvhdlzcv9b6cygrqx6mt7.streamlit.app/'  # This should be the public URL when deployed
     try:
         response = requests.get(url)
         response.raise_for_status()  # Check if the request was successful
