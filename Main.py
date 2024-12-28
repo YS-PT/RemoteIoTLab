@@ -1,30 +1,42 @@
 import streamlit as st
 import pandas as pd
-import requests
+import paho.mqtt.client as mqtt
 from datetime import datetime
 
+# MQTT settings
+mqtt_server = 'mqtts://fa8abb9aa92b4c85bb9540320242427f.s1.eu.hivemq.cloud'  # Replace with your HiveMQ broker URL
+mqtt_port = 8883  # Default MQTT port
+mqtt_user = 'e0939484@u.nus.edu'  # Replace with your HiveMQ username
+mqtt_password = '666666Syy'  # Replace with your HiveMQ password
+topic = 'home/temperature'
+
 # Initialize data storage
-data = []
+if 'data' not in st.session_state:
+    st.session_state.data = []
 
 
-# Function to receive data
-def receive_data():
-    global data
-    url = 'mqtts://05c7b101f2174a7ca5c327bfa0dd506d.s1.eu.hivemq.cloud'  # This should be the public URL when deployed
-    try:
-        response = requests.get(url)
-        response.raise_for_status()  # Check if the request was successful
-        received_data = response.json()
-        temp = received_data.get('temperature')
-        timestamp = datetime.now()
-        data.append({'timestamp': timestamp, 'temperature': temp})
-    except requests.exceptions.RequestException as e:
-        st.error(f"Error fetching data: {e}")
-    except ValueError as e:
-        st.error(f"JSON decode error: {e}")
+# Callback function to handle incoming MQTT messages
+def on_message(client, userdata, message):
+    msg = message.payload.decode()
+    temperature = float(msg.split(':')[1].strip().strip('}'))
+    timestamp = datetime.now()
+    st.session_state.data.append({'timestamp': timestamp, 'temperature': temperature})
 
 
-# Streamlit dashboard
+# Connect to MQTT broker and subscribe to topic
+def connect_mqtt():
+    client = mqtt.Client()
+    client.username_pw_set(mqtt_user, mqtt_password)
+    client.on_message = on_message
+    client.connect(mqtt_server, mqtt_port, 60)
+    client.subscribe(topic)
+    client.loop_start()
+    return client
+
+
+# Start the MQTT client
+client = connect_mqtt()
+
 st.title('IoT Data Dashboard')
 
 # Sidebar for time of day filtering
@@ -45,12 +57,9 @@ def filter_data(df, time_of_day):
     return df
 
 
-# Receive data
-receive_data()
-
 # Display data
-if data:
-    df = pd.DataFrame(data)
+if st.session_state.data:
+    df = pd.DataFrame(st.session_state.data)
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     df = filter_data(df, time_of_day)
 
@@ -62,6 +71,4 @@ if data:
 
 # Add a button to manually refresh data
 if st.button('Refresh Data'):
-    # Use query params to trigger a re-run
-    receive_data()
     st.rerun()
