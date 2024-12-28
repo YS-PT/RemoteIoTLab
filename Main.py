@@ -10,7 +10,7 @@ data = []
 # Function to receive data
 def receive_data():
     global data
-    url = 'https://share.streamlit.io/user/ys-pt/remoteiotlab'  # This should be the public URL when deployed
+    url = 'mqtts://05c7b101f2174a7ca5c327bfa0dd506d.s1.eu.hivemq.cloud'  # This should be the public URL when deployed
     try:
         response = requests.get(url)
         response.raise_for_status()  # Check if the request was successful
@@ -63,4 +63,5 @@ if data:
 # Add a button to manually refresh data
 if st.button('Refresh Data'):
     # Use query params to trigger a re-run
-    st.query_params(refresh_data=datetime.now().isoformat())
+    receive_data()
+    st.rerun()
