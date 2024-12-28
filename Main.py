@@ -4,7 +4,7 @@ import paho.mqtt.client as mqtt
 from datetime import datetime
 
 # MQTT settings
-mqtt_server = 'mqtts://fa8abb9aa92b4c85bb9540320242427f.s1.eu.hivemq.cloud'  # Replace with your HiveMQ broker URL
+mqtt_server = 'fa8abb9aa92b4c85bb9540320242427f.s1.eu.hivemq.cloud'  # Replace with your HiveMQ broker URL
 mqtt_port = 8883  # Default MQTT port
 mqtt_user = 'e0939484@u.nus.edu'  # Replace with your HiveMQ username
 mqtt_password = '666666Syy'  # Replace with your HiveMQ password
