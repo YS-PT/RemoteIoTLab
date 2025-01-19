@@ -2,9 +2,10 @@ import pandas as pd
 import io
 import json
 from dash import dcc, callback_context, exceptions
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 from plotly.graph_objs import Scatter, Figure
 from app.data_store import get_sensor_data
+from app.data_store import clear_in_memory_data, clear_database, clear_year_data
 
 
 def register_callbacks(app):
@@ -84,3 +85,30 @@ def register_callbacks(app):
             # Generate JSON data
             json_data = json.dumps(data, indent=2)
             return dcc.send_bytes(json_data.encode(), "sensor_data.json")
+
+    @app.callback(
+        Output("clear-data-status", "children"),
+        Input("clear-data-button", "n_clicks"),
+        prevent_initial_call=True
+    )
+    def clear_data(n_clicks):
+        try:
+            # Clear both in-memory data and database
+            clear_in_memory_data()
+            clear_database()
+            return "All data has been cleared successfully!"
+        except Exception as e:
+            return f"Error clearing data: {e}"
+
+    @app.callback(
+        Output("clear-year-status", "children"),
+        [Input("clear-year-button", "n_clicks")],
+        [State("year-input", "value")],
+        prevent_initial_call=True
+    )
+    def clear_specific_year(n_clicks, year):
+        if year is None:
+            return "Please enter a valid year."
+
+        result = clear_year_data(year)
+        return result

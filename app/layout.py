@@ -1,11 +1,10 @@
 from dash import dcc, html
 import dash_bootstrap_components as dbc
+from datetime import datetime
 
-
-def create_layout():
+def create_layout() -> object:
     return dbc.Container([
         html.H1("IoT Sensor Dashboard", className="text-center my-4"),
-
         dbc.Row([
             dbc.Col([
                 dcc.Graph(id='dht11-temp-chart', style={'height': '300px'}),
@@ -34,5 +33,19 @@ def create_layout():
             ], width=4),
         ]),
 
+        html.Div([
+            dbc.Button("Clear Data", id="clear-data-button", color="danger", className="my-2"),
+            html.Div(id="clear-data-status", className="text-danger")
+        ]),
+        html.Div([
+            html.H4("Clear Specific Year Data"),
+            dbc.Input(id="year-input", placeholder="Enter year (e.g., 2023)", type="number", min=2000,
+                      max=datetime.now().year),
+            dbc.Button("Clear Year", id="clear-year-button", color="danger", className="my-2"),
+            html.Div(id="clear-year-status", className="text-danger")
+        ]),
+
         dcc.Interval(id='update-interval', interval=2000, n_intervals=0)
     ])
+
+

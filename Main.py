@@ -4,7 +4,10 @@ from app.data_store import add_sensor_data
 from app.layout import create_layout
 from app.mqtt_client import start_mqtt
 from app.callbacks import register_callbacks
+import sys
 
+
+print("Python Path:", sys.path)
 # Set up the layout
 app.layout = create_layout()
 

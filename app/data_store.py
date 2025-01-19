@@ -40,9 +40,34 @@ def add_sensor_data(data):
                         data['light_intensity']))
         conn.commit()
         conn.close()
-        print("Sensor data added successfully.")
+        #print("Sensor data added successfully.")
     except sqlite3.DatabaseError as e:
         print(f"Error adding data to database: {e}")
+
+
+def clear_database():
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM sensor_data")
+        conn.commit()
+        conn.close()
+        print("All data cleared successfully.")
+    except Exception as e:
+        print(f"Error clearing data: {e}")
+
+
+# Clear data for a specific year
+def clear_year_data(year):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM sensor_data WHERE utctime('%Y', timestamp) = ?", (str(year),))
+        conn.commit()
+        conn.close()
+        print(f"Data for year {year} cleared successfully.")
+    except Exception as e:
+        print(f"Error clearing data for year {year}: {e}")
 
 
 # Retrieve sensor data from the database
@@ -71,7 +96,7 @@ def get_sensor_data():
         return []
 
 
-def add_sensor_data(data):
+def add_sensor_data_csv(data):
     global sensor_data_list
     sensor_data_list.append(data)
     # Limit the size of the data list
@@ -79,8 +104,14 @@ def add_sensor_data(data):
         sensor_data_list.pop(0)
 
 
-def get_sensor_data():
+def get_sensor_data_csv():
     return sensor_data_list
+
+
+def clear_in_memory_data():
+    """Clears the in-memory sensor data."""
+    global sensor_data_list
+    sensor_data_list = []
 
 
 # Call init_db() to ensure the database is set up when the module is imported
