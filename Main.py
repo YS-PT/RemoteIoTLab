@@ -21,4 +21,5 @@ if __name__ == '__main__':
 
     # Run the Dash app
     app.run_server(debug=True, host="192.168.0.240", port=8050)
+    #app.run_server(debug=True, host="172.20.10.5", port=8050)
 
