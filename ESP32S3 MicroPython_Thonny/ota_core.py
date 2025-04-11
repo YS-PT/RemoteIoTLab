@@ -6,8 +6,8 @@ from machine import reset
 import machine
 
 # === Configuration ===
-WIFI_SSID = "Ying"
-WIFI_PASSWORD = "94607901"
+WIFI_SSID = "aa"
+WIFI_PASSWORD = "12345678"
 MQTT_BROKER = 'a' # replace with actual broker address
 MQTT_PORT = 8883
 MQTT_USER = 'b'  # replace with actual username 
