@@ -17,6 +17,7 @@ SENSOR_TOPIC = 'fyp/RemoteIoT'
 CODE_TOPIC = "fyp/code_update"
 DEBUG_TOPIC = "fyp/debug_output"
 
+
 # SSL context
 context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 context.verify_mode = ssl.CERT_NONE
@@ -35,6 +36,7 @@ light_sensor.atten(ADC.ATTN_11DB)
 i2c = SoftI2C(scl=Pin(21), sda=Pin(47))
 oled = SSD1306_I2C(128, 64, i2c)
 
+
 # === Wi-Fi ===
 def connect_wifi():
     wlan = network.WLAN(network.STA_IF)
@@ -43,7 +45,8 @@ def connect_wifi():
     while not wlan.isconnected():
         time.sleep(1)
     print("Wi-Fi connected:", wlan.ifconfig())
-    
+
+
 # === MQTT Connect ===
 def connect_mqtt():
     global client
@@ -51,32 +54,35 @@ def connect_mqtt():
     while retries < 5:
         try:
             client = MQTTClient(client_id=CLIENT_ID, server=MQTT_BROKER, port=MQTT_PORT,
-                            user=MQTT_USER, password=MQTT_PASSWORD, ssl=context)
+                                user=MQTT_USER, password=MQTT_PASSWORD, ssl=context)
 
             client.set_callback(receive_code_update)  # ✅ Set callback BEFORE connect
             client.connect(clean_session=True)
-            client.subscribe(CODE_TOPIC)      # ✅ Subscribe to code topic
+            client.subscribe(CODE_TOPIC)  # ✅ Subscribe to code topic
             print(f"✅ Connected to MQTT: {MQTT_BROKER}, subscribed to {CODE_TOPIC}")
             return True
         except Exception as e:
-            print(f"⚠️ MQTT connect error ({retries+1}/5): {e}")
+            print(f"⚠️ MQTT connect error ({retries + 1}/5): {e}")
             retries += 1
             time.sleep(5)
             machine.deepsleep(5000)
     print("❌ MQTT failed after retries. Rebooting...")
     machine.deepsleep(5000)
-        
+
+
 # === OTA Callback ==
 def receive_code_update(topic, msg):
     global client
     print("✅ OTA message received on topic:", topic)
     try:
-        code = msg.decode()  # directly decode incoming Python script
-        filename = data.get("filename", "user_script.py")
-        code = data.get("code", "")
+        payload = json.loads(msg.decode())  # parse Json payload
+        filename = payload.get("filename", "user_script.py")
+        code = payload.get("code", "")
         with open(filename, "w") as f:
             f.write(code)
             f.flush()
+        print(f"✅ OTA: Saved {filename}")
+
         client.publish(DEBUG_TOPIC, f"✅ OTA: Saved {filename}. Running...".encode())
         print(f"🚀 Executing {filename}...")
 
@@ -90,8 +96,7 @@ def receive_code_update(topic, msg):
         print(error_msg)
         client.publish(DEBUG_TOPIC, error_msg.encode())
 
-    
-            
+
 # === Read Sensors ===
 def read_sensors():
     dht_sensor.measure()
@@ -104,6 +109,7 @@ def read_sensors():
         "light": light_sensor.read()
     }
 
+
 # === OLED Display ===
 def show_oled(data):
     oled.fill(0)
@@ -113,6 +119,7 @@ def show_oled(data):
     oled.text(f"Light: {data['light']}", 0, 30)
     oled.text("OTA Active", 0, 50)
     oled.show()
+
 
 # === MQTT Sensor Publish ===
 def publish_data(data):
@@ -128,6 +135,7 @@ def publish_data(data):
     client.publish(SENSOR_TOPIC, payload)
     print("Published sensor data:", payload)
 
+
 # === Run user script on boot ===
 def run_saved_script():
     print("🔍 Looking for user-uploaded script to run...")
@@ -142,7 +150,8 @@ def run_saved_script():
                 client.publish(DEBUG_TOPIC, f"✅ Running user script after reboot".encode())
             except Exception as e:
                 client.publish(DEBUG_TOPIC, f"Script error: {str(e)}".encode())
-           
+
+
 # === Main Loop ===
 def main():
     global client
