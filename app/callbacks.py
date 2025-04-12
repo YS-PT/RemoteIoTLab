@@ -6,8 +6,8 @@ from dash import dcc, callback_context, exceptions
 from dash.dependencies import Input, Output, State
 from plotly.graph_objs import Scatter, Figure
 from app.data_store import get_sensor_data, clear_in_memory_data, clear_database, clear_year_data
-from app.mqtt_client import send_code_to_esp32, client, MQTT_TOPIC_CODE, MQTT_TOPIC_DEBUG
-
+from app.mqtt_client import send_code_to_esp32, client, MQTT_TOPIC_CODE, MQTT_TOPIC_DEBUG,debug_messages
+from dash import html
 
 def register_callbacks(app):
     # ------------------------- Sensor Data Update Callback -------------------------
@@ -102,63 +102,16 @@ def register_callbacks(app):
         return clear_year_data(year)
 
     # ------------------------- Code Upload & MQTT OTA Callback -------------------------
-
-    # @app.callback(
-    #     Output("upload-status", "children"),
-    #     [Input("upload-code", "contents"),
-    #      Input("send-code-button", "n_clicks")],
-    #     [State("upload-code", "filename")],
-    #     prevent_initial_call=True
-    # )
-    # def handle_upload_and_send(contents, n_clicks, filename):
-    #     ctx = callback_context  # Get context to determine trigger
-    #
-    #     if not ctx.triggered:
-    #         return "No action triggered."
-    #
-    #     trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]  # Identify the trigger
-    #     """ Handles file upload and sends MicroPython code to ESP32 via MQTT. """
-    #     if trigger_id == "upload-code" and contents:
-    #         try:
-    #             _, content_string = contents.split(',')
-    #             decoded = base64.b64decode(content_string).decode('utf-8')
-    #
-    #             # Send the MicroPython code to ESP32 via MQTT
-    #             send_code_to_esp32(decoded)
-    #
-    #             return f"Successfully uploaded and sent {filename} to ESP32."
-    #         except Exception as e:
-    #             return f"Error processing file: {e}"
-    #
-    #     elif trigger_id == "send-code-button" and contents:
-    #         try:
-    #             _, content_string = contents.split(',')
-    #             decoded = base64.b64decode(content_string).decode('utf-8')
-    #
-    #             # Publish code to ESP32 via MQTT
-    #             send_code_to_esp32(decoded)
-    #
-    #             return "Code sent successfully!"
-    #         except Exception as e:
-    #             return f"Error: {e}"
-    #
-    #     return "No valid action performed."
-
     @app.callback(
         Output("debug-output", "children"),
         [Input("update-interval", "n_intervals")]
     )
-    def fetch_debug_output(n):
-        """ Fetches real-time debug output from ESP32. """
-        debug_logs = []
-
-        def on_message(client, userdata, msg):
-            debug_logs.append(msg.payload.decode())
-
-        client.subscribe(MQTT_TOPIC_DEBUG)
-        client.on_message = on_message
-
-        return "\n".join(debug_logs) if debug_logs else "Waiting for debug data..."
+    def update_debug_output(n_intervals):
+        if debug_messages:
+            latest_messages = list(debug_messages)[-10:]  # display last 5 clearly
+            formatted_messages = [html.Div(msg) for msg in reversed(latest_messages)]
+            return formatted_messages
+        return "Waiting for debug data..."
 
     @app.callback(
         Output("upload-status", "children"),

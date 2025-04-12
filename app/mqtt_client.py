@@ -1,3 +1,5 @@
+import time
+from collections import deque
 import paho.mqtt.client as mqtt
 import json
 from datetime import datetime
@@ -7,8 +9,8 @@ from app.data_store import add_sensor_data
 MQTT_BROKER = 'fa8abb9aa92b4c85bb9540320242427f.s1.eu.hivemq.cloud'
 MQTT_PORT = 8883
 MQTT_TOPIC = 'fyp/RemoteIoT'
-MQTT_TOPIC_CODE = 'ESP32/Code_Upload'
-MQTT_TOPIC_DEBUG = 'ESP32/Debug'
+MQTT_TOPIC_CODE = 'fyp/code_update'
+MQTT_TOPIC_DEBUG = 'fyp/debug_output'
 MQTT_USER = 'ESP32S3-1'
 MQTT_PASSWORD = 'HiveMQ11'
 
@@ -17,6 +19,7 @@ client = mqtt.Client()
 client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
 client.tls_set()  # Enable TLS for secure connection
 
+debug_messages = deque(maxlen=100)
 
 def on_connect(client, userdata, flags, rc):
     print(f"Connected to MQTT Broker with result code {rc}")
@@ -35,6 +38,7 @@ def on_message(client, userdata, msg):
             process_sensor_data(payload)
         elif msg.topic == MQTT_TOPIC_DEBUG:
             process_debug_message(payload)
+            debug_messages.append(payload)  # Save messages clearly
         elif msg.topic == MQTT_TOPIC_CODE:
             send_code_to_esp32(payload)  # Handle OTA update
     except Exception as e:
@@ -75,8 +79,9 @@ def send_code_to_esp32(filename, code_string):
         }
 
         new_client.publish("fyp/code_update", json.dumps(payload))
-        new_client.disconnect()
         print("✅ Code sent to ESP32S3")
+        time.sleep(5)
+        new_client.disconnect()
     except Exception as e:
         print("MQTT OTA Send Error:", e)
 
